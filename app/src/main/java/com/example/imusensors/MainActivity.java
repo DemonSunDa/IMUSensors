@@ -103,6 +103,25 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private static final int REQUEST_ID_ACTIVITY_RECOGNITION_PERMISSION = 98;
+
+    private void askActivityPermission() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            // Check if we have read/write permission
+            int activityRecognitionPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACTIVITY_RECOGNITION);
+
+            if (activityRecognitionPermission != PackageManager.PERMISSION_GRANTED) {
+                // If don't have permission so prompt the user
+                this.requestPermissions(
+                        new String[]{Manifest.permission.ACTIVITY_RECOGNITION},
+                        REQUEST_ID_ACTIVITY_RECOGNITION_PERMISSION
+                );
+                return;
+            }
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult (int requestCode, String permissions[], int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -115,10 +134,27 @@ public class MainActivity extends AppCompatActivity
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission Granted!", Toast.LENGTH_LONG).show();
+                    askActivityPermission();
                 }
                 //cancel or denied
                 else {
                     Toast.makeText(this, "Permission Denied!", Toast.LENGTH_LONG).show();
+                    askStoragePermission();
+                }
+                break;
+            }
+
+            case REQUEST_ID_ACTIVITY_RECOGNITION_PERMISSION: {
+                //If request is cancelled, the result array is empty
+                //Permissions granted: activity recognition
+                if (grantResults.length == 1
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Permission Granted!", Toast.LENGTH_LONG).show();
+                }
+                //cancel or denied
+                else {
+                    Toast.makeText(this, "Permission Denied!", Toast.LENGTH_LONG).show();
+                    askActivityPermission();
                 }
                 break;
             }
@@ -158,8 +194,8 @@ public class MainActivity extends AppCompatActivity
         tvGyrH.setText("gyr_H: " + gyrValues[3]);
     }
 
-//    @Override
-//    public void onStpValuesUpdate(float[] stpValues) {
-//
-//    }
+    @Override
+    public void onStpValuesUpdate(int stpCtr) {
+        tvStpCtr.setText("step count: " + stpCtr);
+    }
 }

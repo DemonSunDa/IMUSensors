@@ -14,7 +14,9 @@ public class IMUSensorManager implements SensorEventListener{
     private Sensor Accelerometer;
     private Sensor MagneticField;
     private Sensor Gyroscope;
-//    Sensor StepCounter;
+    private Sensor StepDetector;
+
+    private int stp_ctr;
 
 
     // Constructor of the class
@@ -23,7 +25,9 @@ public class IMUSensorManager implements SensorEventListener{
         Accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         MagneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         Gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-//        StepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        StepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+
+        stp_ctr = 0;
     }
 
     // Allow setting the listener through this function
@@ -35,7 +39,7 @@ public class IMUSensorManager implements SensorEventListener{
         sensorManager.registerListener(this, Accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, MagneticField, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this,Gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-//        sensorManager.registerListener(this, StepCounter, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, StepDetector, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void unregisterIMUSensors() {
@@ -80,10 +84,10 @@ public class IMUSensorManager implements SensorEventListener{
                         sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2], (float) h});
                 break;
 
-//            case Sensor.TYPE_STEP_COUNTER:
-//                onIMUListener.onStpValuesUpdate(new float[] {
-//                        sensorEvent.values[0]});
-//                break;
+            case Sensor.TYPE_STEP_DETECTOR:
+                stp_ctr = stp_ctr + 1;
+                onIMUSensorListener.onStpValuesUpdate(stp_ctr);
+                break;
         }
     }
 
@@ -98,7 +102,7 @@ public class IMUSensorManager implements SensorEventListener{
         void onAccValuesUpdate(float[] accValues);
         void onMagValuesUpdate(float[] magValues);
         void onGyrValuesUpdate(float[] gyrValues);
-//        void onStpValuesUpdate(float[] stpValues);
+        void onStpValuesUpdate(int stpCtr);
     }
 
 }
