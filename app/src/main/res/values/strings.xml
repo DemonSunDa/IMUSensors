@@ -3,4 +3,23 @@
 
     <string name="bt_imu_start">Start</string>
     <string name="bt_imu_stop">Stop</string>
+
+    <string name="tv_acc_title">Accelerometer</string>
+    <string name="tv_acc_value0">acc_X: </string>
+    <string name="tv_acc_value1">acc_Y: </string>
+    <string name="tv_acc_value2">acc_Z: </string>
+
+    <string name="tv_mag_title">EMF</string>
+    <string name="tv_mag_value0">mag_X: </string>
+    <string name="tv_mag_value1">mag_Y: </string>
+    <string name="tv_mag_value2">mag_Z: </string>
+
+    <string name="tv_gyr_title">Gyroscope</string>
+    <string name="tv_gyr_value0">gyr_X: </string>
+    <string name="tv_gyr_value1">gyr_Y: </string>
+    <string name="tv_gyr_value2">gyr_Z: </string>
+
+    <string name="tv_stp_title">Step Counter</string>
+    <string name="tv_stp_value0">Step count: </string>
+
 </resources>
