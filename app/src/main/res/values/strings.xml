@@ -18,6 +18,7 @@
     <string name="tv_gyr_value0">gyr_X: </string>
     <string name="tv_gyr_value1">gyr_Y: </string>
     <string name="tv_gyr_value2">gyr_Z: </string>
+    <string name="tv_gyr_value3">gyr_H: </string>
 
     <string name="tv_stp_title">Step Counter</string>
     <string name="tv_stp_value0">Step count: </string>

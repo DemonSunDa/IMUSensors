@@ -9,15 +9,32 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
         implements IMUSensorManager.OnIMUSensorListener {
 
-    Button btIMUStart;
-    Button btIMUStop;
+    private Button btIMUStart;
+    private Button btIMUStop;
+
+    private TextView tvAccX;
+    private TextView tvAccY;
+    private TextView tvAccZ;
+
+    private TextView tvMagX;
+    private TextView tvMagY;
+    private TextView tvMagZ;
+
+    private TextView tvGyrX;
+    private TextView tvGyrY;
+    private TextView tvGyrZ;
+    private TextView tvGyrH;
+
+    private TextView tvStpCtr;
 
     private IMUSensorManager imuSensorManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +43,21 @@ public class MainActivity extends AppCompatActivity
 
         btIMUStart = (Button) findViewById(R.id.bt_imu_start);
         btIMUStop = (Button) findViewById(R.id.bt_imu_stop);
+
+        tvAccX = (TextView) findViewById(R.id.tv_acc_value0);
+        tvAccY = (TextView) findViewById(R.id.tv_acc_value1);
+        tvAccZ = (TextView) findViewById(R.id.tv_acc_value2);
+
+        tvMagX = (TextView) findViewById(R.id.tv_mag_value0);
+        tvMagY = (TextView) findViewById(R.id.tv_mag_value1);
+        tvMagZ = (TextView) findViewById(R.id.tv_mag_value2);
+
+        tvGyrX = (TextView) findViewById(R.id.tv_gyr_value0);
+        tvGyrY = (TextView) findViewById(R.id.tv_gyr_value1);
+        tvGyrZ = (TextView) findViewById(R.id.tv_gyr_value2);
+        tvGyrH = (TextView) findViewById(R.id.tv_gyr_value3);
+
+        tvStpCtr = (TextView) findViewById(R.id.tv_stp_value0);
 
         askStoragePermission();
 
@@ -106,17 +138,24 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onAccValuesUpdate(float[] accValues) {
-
+        tvAccX.setText("acc_X: " + accValues[0]);
+        tvAccY.setText("acc_Y: " + accValues[1]);
+        tvAccZ.setText("acc_Z: " + accValues[2]);
     }
 
     @Override
     public void onMagValuesUpdate(float[] magValues) {
-
+        tvMagX.setText("mag_X: " + magValues[0]);
+        tvMagY.setText("mag_Y: " + magValues[1]);
+        tvMagZ.setText("mag_Z: " + magValues[2]);
     }
 
     @Override
     public void onGyrValuesUpdate(float[] gyrValues) {
-
+        tvGyrX.setText("gyr_X: " + gyrValues[0]);
+        tvGyrY.setText("gyr_Y: " + gyrValues[1]);
+        tvGyrZ.setText("gyr_Z: " + gyrValues[2]);
+        tvGyrH.setText("gyr_H: " + gyrValues[3]);
     }
 
 //    @Override

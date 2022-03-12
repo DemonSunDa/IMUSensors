@@ -124,6 +124,12 @@
             android:text="@string/tv_gyr_value2" />
 
         <TextView
+            android:id="@+id/tv_gyr_value3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_gyr_value3" />
+
+        <TextView
             android:id="@+id/tv_stp_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
