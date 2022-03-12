@@ -68,12 +68,14 @@ public class IMUSensorManager implements SensorEventListener{
                 linear_acceleration[2] = sensorEvent.values[2] - gravity[2];
 
                 onIMUSensorListener.onAccValuesUpdate(new float[] {
-                        linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]});
+                        linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]},
+                        (long) sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD:
                 onIMUSensorListener.onMagValuesUpdate(new float[] {
-                        sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]});
+                        sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]},
+                        (long) sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_GYROSCOPE:
@@ -81,12 +83,13 @@ public class IMUSensorManager implements SensorEventListener{
                         sensorEvent.values[1] * sensorEvent.values[1] +
                         sensorEvent.values[2] * sensorEvent.values[2]);
                 onIMUSensorListener.onGyrValuesUpdate(new float[] {
-                        sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2], (float) h});
+                        sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2],
+                        (float) h}, (long) sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_STEP_DETECTOR:
                 stp_ctr = stp_ctr + 1;
-                onIMUSensorListener.onStpValuesUpdate(stp_ctr);
+                onIMUSensorListener.onStpValuesUpdate((int) stp_ctr, (long) sensorEvent.timestamp);
                 break;
         }
     }
@@ -99,10 +102,10 @@ public class IMUSensorManager implements SensorEventListener{
 
     // Interface
     public interface OnIMUSensorListener {
-        void onAccValuesUpdate(float[] accValues);
-        void onMagValuesUpdate(float[] magValues);
-        void onGyrValuesUpdate(float[] gyrValues);
-        void onStpValuesUpdate(int stpCtr);
+        void onAccValuesUpdate(float[] accValues, long timestamp);
+        void onMagValuesUpdate(float[] magValues, long timestamp);
+        void onGyrValuesUpdate(float[] gyrValues, long timestamp);
+        void onStpValuesUpdate(int stpCtr, long timestamp);
     }
 
 }

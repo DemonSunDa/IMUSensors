@@ -3,10 +3,19 @@ package com.example.imusensors;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -34,6 +43,12 @@ public class MainActivity extends AppCompatActivity
     private TextView tvStpCtr;
 
     private IMUSensorManager imuSensorManager;
+
+    private boolean idcWrite;
+    private final String TAG = "IMUSensorLog";
+    private File mAppStorageDir;
+    FileOutputStream fileOutputStream;
+    File dataFile;
 
 
     @Override
@@ -63,6 +78,9 @@ public class MainActivity extends AppCompatActivity
 
         imuSensorManager = new IMUSensorManager(this);
         imuSensorManager.setOnIMUSensorListener(this);
+
+        idcWrite = false;
+        mAppStorageDir = getFilesDir();
     }
 
     @Override
@@ -133,12 +151,12 @@ public class MainActivity extends AppCompatActivity
                 if (grantResults.length > 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Permission Granted!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show();
                     askActivityPermission();
                 }
                 //cancel or denied
                 else {
-                    Toast.makeText(this, "Permission Denied!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
                     askStoragePermission();
                 }
                 break;
@@ -149,11 +167,11 @@ public class MainActivity extends AppCompatActivity
                 //Permissions granted: activity recognition
                 if (grantResults.length == 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Permission Granted!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show();
                 }
                 //cancel or denied
                 else {
-                    Toast.makeText(this, "Permission Denied!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
                     askActivityPermission();
                 }
                 break;
@@ -165,29 +183,79 @@ public class MainActivity extends AppCompatActivity
     public void onBtIMUStart(View view) {
         btIMUStart.setEnabled(false);
         btIMUStop.setEnabled(true);
+
+        try {
+            dataFile = createDataFile();
+            fileOutputStream = new FileOutputStream(dataFile, false);
+            Log.d(TAG, "Writing to " + currentDataPath);
+            if (fileOutputStream != null) {
+                fileOutputStream.write("Timestamp,Sensor_Type,Value_1,Value_2,Value_3,Value_4\n"
+                        .getBytes(StandardCharsets.UTF_8));
+                String st = new SimpleDateFormat("HHmmssSSS").format(new Date());
+                fileOutputStream.write(st
+                        .getBytes(StandardCharsets.UTF_8));
+            }
+            else {
+                Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        idcWrite = true;
     }
 
     public void onBtIMUStop(View view) {
         btIMUStart.setEnabled(true);
         btIMUStop.setEnabled(false);
+        try {
+            fileOutputStream.close();
+            Log.d(TAG, "Saved to " + currentDataPath);
+            Toast.makeText(this, "Temp file saved.", Toast.LENGTH_SHORT).show();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        idcWrite = false;
+        dataFile = null;
+        fileOutputStream = null;
     }
 
+
+    private String currentDataPath;
+
+    private File createDataFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssZ").format(new Date());
+        String dataFileName = "IMUData_" + timeStamp;
+        File mAppStorageDir = getFilesDir();
+        File imuData = File.createTempFile(
+                dataFileName,
+                ".csv",
+                mAppStorageDir
+        );
+
+        currentDataPath = imuData.getAbsolutePath();
+        return imuData;
+    }
+
+
     @Override
-    public void onAccValuesUpdate(float[] accValues) {
+    public void onAccValuesUpdate(float[] accValues, long timestamp) {
         tvAccX.setText("acc_X: " + accValues[0]);
         tvAccY.setText("acc_Y: " + accValues[1]);
         tvAccZ.setText("acc_Z: " + accValues[2]);
     }
 
     @Override
-    public void onMagValuesUpdate(float[] magValues) {
+    public void onMagValuesUpdate(float[] magValues, long timestamp) {
         tvMagX.setText("mag_X: " + magValues[0]);
         tvMagY.setText("mag_Y: " + magValues[1]);
         tvMagZ.setText("mag_Z: " + magValues[2]);
     }
 
     @Override
-    public void onGyrValuesUpdate(float[] gyrValues) {
+    public void onGyrValuesUpdate(float[] gyrValues, long timestamp) {
         tvGyrX.setText("gyr_X: " + gyrValues[0]);
         tvGyrY.setText("gyr_Y: " + gyrValues[1]);
         tvGyrZ.setText("gyr_Z: " + gyrValues[2]);
@@ -195,7 +263,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onStpValuesUpdate(int stpCtr) {
+    public void onStpValuesUpdate(int stpCtr, long timestamp) {
         tvStpCtr.setText("step count: " + stpCtr);
     }
 }
