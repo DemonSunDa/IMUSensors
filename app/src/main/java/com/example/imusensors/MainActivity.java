@@ -45,10 +45,10 @@ public class MainActivity extends AppCompatActivity
 
     private IMUSensorManager imuSensorManager;
 
-    private boolean idcWrite;
     private final String TAG = "IMUSensorLog";
-    FileOutputStream fileOutputStream;
+    private boolean idcWrite; // indicator true to start, false to stop
     File dataFile;
+    FileOutputStream fileOutputStream;
 
 
     @Override
@@ -76,10 +76,13 @@ public class MainActivity extends AppCompatActivity
 
         askStoragePermission();
 
+        // Instantiate SensorManager
         imuSensorManager = new IMUSensorManager(this);
         imuSensorManager.setOnIMUSensorListener(this);
 
         idcWrite = false;
+        dataFile = null;
+        fileOutputStream = null;
     }
 
     @Override
@@ -186,12 +189,14 @@ public class MainActivity extends AppCompatActivity
         btIMUStop.setEnabled(true);
 
         try {
-            dataFile = createDataFile();
+            dataFile = createDataFile(); // create a file in internal storage
+            // Create a file output stream to write to the file
+            // true for appending to the end, false for writing from the start
             fileOutputStream = new FileOutputStream(dataFile, false);
             Log.d(TAG, "Writing to " + currentDataPath);
             if (fileOutputStream != null) {
                 fileOutputStream.write("Timestamp,Sensor_Type,Value_1,Value_2,Value_3,Value_4\n"
-                        .getBytes(StandardCharsets.UTF_8));
+                        .getBytes(StandardCharsets.UTF_8)); // title row
             }
             else {
                 Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
@@ -207,14 +212,16 @@ public class MainActivity extends AppCompatActivity
     public void onBtIMUStop(View view) {
         btIMUStart.setEnabled(true);
         btIMUStop.setEnabled(false);
+
         try {
             fileOutputStream.close();
             Log.d(TAG, "Saved to " + currentDataPath);
-            Toast.makeText(this, "Temp file saved.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Internal file saved.", Toast.LENGTH_SHORT).show();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
+
         idcWrite = false;
         dataFile = null;
         fileOutputStream = null;
@@ -225,8 +232,8 @@ public class MainActivity extends AppCompatActivity
 
     private File createDataFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String dataFileName = "IMUData_" + timeStamp;
-        File mAppStorageDir = getFilesDir();
+        String dataFileName = "IMUData_" + timeStamp; // file name
+        File mAppStorageDir = getFilesDir(); // internal storage directory
         File imuData = File.createTempFile(
                 dataFileName,
                 ".csv",
