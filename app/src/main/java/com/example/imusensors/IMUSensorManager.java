@@ -10,11 +10,11 @@ import android.hardware.SensorManager;
 public class IMUSensorManager implements SensorEventListener{
     private OnIMUSensorListener onIMUSensorListener;
 
-    private SensorManager sensorManager;
-    private Sensor Accelerometer;
-    private Sensor MagneticField;
-    private Sensor Gyroscope;
-    private Sensor StepDetector;
+    private final SensorManager sensorManager;
+    private final Sensor Accelerometer;
+    private final Sensor MagneticField;
+    private final Sensor Gyroscope;
+    private final Sensor StepDetector;
 
     private int stp_ctr;
 
@@ -47,10 +47,8 @@ public class IMUSensorManager implements SensorEventListener{
     }
 
 
-    private double h;
     final float alpha = (float) 0.8;
-    private float gravity [] = new float[3];
-
+    private float[] gravity = new float[3];
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -62,34 +60,34 @@ public class IMUSensorManager implements SensorEventListener{
                 gravity[2] = alpha * gravity[2] + (1-alpha) * sensorEvent.values[2];
 
                 // Remove g
-                float linear_acceleration[] = new float[3];
+                float[] linear_acceleration = new float[3];
                 linear_acceleration[0] = sensorEvent.values[0] - gravity[0];
                 linear_acceleration[1] = sensorEvent.values[1] - gravity[1];
                 linear_acceleration[2] = sensorEvent.values[2] - gravity[2];
 
                 onIMUSensorListener.onAccValuesUpdate(new float[] {
                         linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]},
-                        (long) sensorEvent.timestamp);
+                        sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD:
                 onIMUSensorListener.onMagValuesUpdate(new float[] {
                         sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]},
-                        (long) sensorEvent.timestamp);
+                        sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_GYROSCOPE:
-                h = Math.sqrt(sensorEvent.values[0] * sensorEvent.values[0] +
+                double h = Math.sqrt(sensorEvent.values[0] * sensorEvent.values[0] +
                         sensorEvent.values[1] * sensorEvent.values[1] +
                         sensorEvent.values[2] * sensorEvent.values[2]);
                 onIMUSensorListener.onGyrValuesUpdate(new float[] {
                         sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2],
-                        (float) h}, (long) sensorEvent.timestamp);
+                        (float) h}, sensorEvent.timestamp);
                 break;
 
             case Sensor.TYPE_STEP_DETECTOR:
                 stp_ctr = stp_ctr + 1;
-                onIMUSensorListener.onStpValuesUpdate((int) stp_ctr, (long) sensorEvent.timestamp);
+                onIMUSensorListener.onStpValuesUpdate(stp_ctr, sensorEvent.timestamp);
                 break;
         }
     }

@@ -1,15 +1,16 @@
 package com.example.imusensors;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -46,7 +47,6 @@ public class MainActivity extends AppCompatActivity
 
     private boolean idcWrite;
     private final String TAG = "IMUSensorLog";
-    private File mAppStorageDir;
     FileOutputStream fileOutputStream;
     File dataFile;
 
@@ -56,23 +56,23 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btIMUStart = (Button) findViewById(R.id.bt_imu_start);
-        btIMUStop = (Button) findViewById(R.id.bt_imu_stop);
+        btIMUStart = findViewById(R.id.bt_imu_start);
+        btIMUStop = findViewById(R.id.bt_imu_stop);
 
-        tvAccX = (TextView) findViewById(R.id.tv_acc_value0);
-        tvAccY = (TextView) findViewById(R.id.tv_acc_value1);
-        tvAccZ = (TextView) findViewById(R.id.tv_acc_value2);
+        tvAccX = findViewById(R.id.tv_acc_value0);
+        tvAccY = findViewById(R.id.tv_acc_value1);
+        tvAccZ = findViewById(R.id.tv_acc_value2);
 
-        tvMagX = (TextView) findViewById(R.id.tv_mag_value0);
-        tvMagY = (TextView) findViewById(R.id.tv_mag_value1);
-        tvMagZ = (TextView) findViewById(R.id.tv_mag_value2);
+        tvMagX = findViewById(R.id.tv_mag_value0);
+        tvMagY = findViewById(R.id.tv_mag_value1);
+        tvMagZ = findViewById(R.id.tv_mag_value2);
 
-        tvGyrX = (TextView) findViewById(R.id.tv_gyr_value0);
-        tvGyrY = (TextView) findViewById(R.id.tv_gyr_value1);
-        tvGyrZ = (TextView) findViewById(R.id.tv_gyr_value2);
-        tvGyrH = (TextView) findViewById(R.id.tv_gyr_value3);
+        tvGyrX = findViewById(R.id.tv_gyr_value0);
+        tvGyrY = findViewById(R.id.tv_gyr_value1);
+        tvGyrZ = findViewById(R.id.tv_gyr_value2);
+        tvGyrH = findViewById(R.id.tv_gyr_value3);
 
-        tvStpCtr = (TextView) findViewById(R.id.tv_stp_value0);
+        tvStpCtr = findViewById(R.id.tv_stp_value0);
 
         askStoragePermission();
 
@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity
         imuSensorManager.setOnIMUSensorListener(this);
 
         idcWrite = false;
-        mAppStorageDir = getFilesDir();
     }
 
     @Override
@@ -125,7 +124,8 @@ public class MainActivity extends AppCompatActivity
 
     private void askActivityPermission() {
         if (Build.VERSION.SDK_INT >= 23) {
-            // Check if we have read/write permission
+            // Check if we have activity recognition permission
+            //! API 29+ required
             int activityRecognitionPermission = ActivityCompat.checkSelfPermission(this,
                     Manifest.permission.ACTIVITY_RECOGNITION);
 
@@ -141,14 +141,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onRequestPermissionsResult (int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult (int requestCode, @NonNull String[] permissions,
+                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
             case REQUEST_ID_READ_WRITE_PERMISSION: {
-                //If request is cancelled, the result array is empty
-                //Permissions granted: read/write
-                if (grantResults.length > 1
+                // If request is cancelled, the result array is empty
+                // Permissions granted: read/write
+                if (grantResults.length >= 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show();
@@ -191,9 +192,6 @@ public class MainActivity extends AppCompatActivity
             if (fileOutputStream != null) {
                 fileOutputStream.write("Timestamp,Sensor_Type,Value_1,Value_2,Value_3,Value_4\n"
                         .getBytes(StandardCharsets.UTF_8));
-                String st = new SimpleDateFormat("HHmmssSSS").format(new Date());
-                fileOutputStream.write(st
-                        .getBytes(StandardCharsets.UTF_8));
             }
             else {
                 Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
@@ -226,7 +224,7 @@ public class MainActivity extends AppCompatActivity
     private String currentDataPath;
 
     private File createDataFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssZ").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String dataFileName = "IMUData_" + timeStamp;
         File mAppStorageDir = getFilesDir();
         File imuData = File.createTempFile(
@@ -245,6 +243,23 @@ public class MainActivity extends AppCompatActivity
         tvAccX.setText("acc_X: " + accValues[0]);
         tvAccY.setText("acc_Y: " + accValues[1]);
         tvAccZ.setText("acc_Z: " + accValues[2]);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,ACC,%f,%f,%f\n",
+                            timestamp, accValues[0], accValues[1], accValues[2])
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -252,6 +267,23 @@ public class MainActivity extends AppCompatActivity
         tvMagX.setText("mag_X: " + magValues[0]);
         tvMagY.setText("mag_Y: " + magValues[1]);
         tvMagZ.setText("mag_Z: " + magValues[2]);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,EMF,%f,%f,%f\n",
+                            timestamp, magValues[0], magValues[1], magValues[2])
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -260,10 +292,44 @@ public class MainActivity extends AppCompatActivity
         tvGyrY.setText("gyr_Y: " + gyrValues[1]);
         tvGyrZ.setText("gyr_Z: " + gyrValues[2]);
         tvGyrH.setText("gyr_H: " + gyrValues[3]);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,GYR,%f,%f,%f,%f\n",
+                            timestamp, gyrValues[0], gyrValues[1], gyrValues[2], gyrValues[3])
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void onStpValuesUpdate(int stpCtr, long timestamp) {
         tvStpCtr.setText("step count: " + stpCtr);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,STP,%d\n",
+                            timestamp, stpCtr)
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
