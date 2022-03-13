@@ -316,21 +316,21 @@ public class MainActivity extends AppCompatActivity
     public void onStpValuesUpdate(int stpCtr, long timestamp) {
         tvStpCtr.setText("step count: " + stpCtr);
 
-        if (idcWrite) {
-            try {
-                if (fileOutputStream != null) {
-                    fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,STP,%d\n",
-                            timestamp, stpCtr)
-                            .getBytes(StandardCharsets.UTF_8));
-                }
-                else {
-                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
-                }
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        if (idcWrite) {
+//            try {
+//                if (fileOutputStream != null) {
+//                    fileOutputStream.write(String.format(Locale.getDefault(),
+//                            "%d,STP,%d\n",
+//                            timestamp, stpCtr)
+//                            .getBytes(StandardCharsets.UTF_8));
+//                }
+//                else {
+//                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//            catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 }
