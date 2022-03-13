@@ -264,19 +264,13 @@ public class MainActivity extends AppCompatActivity
         return imuData;
     }
 
-
-    @Override
-    public void onAccValuesUpdate(float[] accFltValues, float[] accValues, long timestamp) {
-        tvAccX.setText("acc_X: " + accFltValues[0]);
-        tvAccY.setText("acc_Y: " + accFltValues[1]);
-        tvAccZ.setText("acc_Z: " + accFltValues[2]);
-
+    private void writeStream(float[] values, long timestamp, String sensorType) {
         if (idcWrite) {
             try {
                 if (fileOutputStream != null) {
                     fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,ACC,%f,%f,%f\n",
-                            timestamp, accValues[0], accValues[1], accValues[2])
+                            "%d,%s,%f,%f,%f\n",
+                            timestamp, sensorType, values[0], values[1], values[2])
                             .getBytes(StandardCharsets.UTF_8));
                 }
                 else {
@@ -289,28 +283,23 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+
+    @Override
+    public void onAccValuesUpdate(float[] accFltValues, float[] accValues, long timestamp) {
+        tvAccX.setText("acc_X: " + accFltValues[0]);
+        tvAccY.setText("acc_Y: " + accFltValues[1]);
+        tvAccZ.setText("acc_Z: " + accFltValues[2]);
+
+        writeStream(accValues, timestamp, "ACC");
+    }
+
     @Override
     public void onMagValuesUpdate(float[] magValues, long timestamp) {
         tvMagX.setText("mag_X: " + magValues[0]);
         tvMagY.setText("mag_Y: " + magValues[1]);
         tvMagZ.setText("mag_Z: " + magValues[2]);
 
-        if (idcWrite) {
-            try {
-                if (fileOutputStream != null) {
-                    fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,EMF,%f,%f,%f\n",
-                            timestamp, magValues[0], magValues[1], magValues[2])
-                            .getBytes(StandardCharsets.UTF_8));
-                }
-                else {
-                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
-                }
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        writeStream(magValues, timestamp, "EMF");
     }
 
     @Override
@@ -320,22 +309,7 @@ public class MainActivity extends AppCompatActivity
         tvGyrZ.setText("gyr_Z: " + gyrValues[2]);
         tvGyrH.setText("gyr_H: " + h);
 
-        if (idcWrite) {
-            try {
-                if (fileOutputStream != null) {
-                    fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,GYR,%f,%f,%f\n",
-                            timestamp, gyrValues[0], gyrValues[1], gyrValues[2])
-                            .getBytes(StandardCharsets.UTF_8));
-                }
-                else {
-                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
-                }
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        writeStream(gyrValues, timestamp, "GYR");
     }
 
     @Override
