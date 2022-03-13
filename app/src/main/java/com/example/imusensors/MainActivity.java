@@ -89,12 +89,31 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
+        if (idcWrite) {
+            try {
+                fileOutputStream = new FileOutputStream(dataFile, true);
+                Log.d(TAG, "Resume writing to " + currentDataPath);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         imuSensorManager.registerIMUSensors();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+
+        if (idcWrite) {
+            try {
+                fileOutputStream.close(); // temporary close the stream
+                Log.d(TAG, "Pause saved to " + currentDataPath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         imuSensorManager.unregisterIMUSensors();
     }
@@ -200,6 +219,7 @@ public class MainActivity extends AppCompatActivity
             }
             else {
                 Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                idcWrite = false;
             }
         }
         catch (IOException e) {
