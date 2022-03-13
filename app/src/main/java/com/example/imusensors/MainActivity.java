@@ -266,10 +266,10 @@ public class MainActivity extends AppCompatActivity
 
 
     @Override
-    public void onAccValuesUpdate(float[] accValues, long timestamp) {
-        tvAccX.setText("acc_X: " + accValues[0]);
-        tvAccY.setText("acc_Y: " + accValues[1]);
-        tvAccZ.setText("acc_Z: " + accValues[2]);
+    public void onAccValuesUpdate(float[] accFltValues, float[] accValues, long timestamp) {
+        tvAccX.setText("acc_X: " + accFltValues[0]);
+        tvAccY.setText("acc_Y: " + accFltValues[1]);
+        tvAccZ.setText("acc_Z: " + accFltValues[2]);
 
         if (idcWrite) {
             try {
@@ -314,18 +314,18 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onGyrValuesUpdate(float[] gyrValues, long timestamp) {
+    public void onGyrValuesUpdate(double h, float[] gyrValues, long timestamp) {
         tvGyrX.setText("gyr_X: " + gyrValues[0]);
         tvGyrY.setText("gyr_Y: " + gyrValues[1]);
         tvGyrZ.setText("gyr_Z: " + gyrValues[2]);
-        tvGyrH.setText("gyr_H: " + gyrValues[3]);
+        tvGyrH.setText("gyr_H: " + h);
 
         if (idcWrite) {
             try {
                 if (fileOutputStream != null) {
                     fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,GYR,%f,%f,%f,%f\n",
-                            timestamp, gyrValues[0], gyrValues[1], gyrValues[2], gyrValues[3])
+                            "%d,GYR,%f,%f,%f\n",
+                            timestamp, gyrValues[0], gyrValues[1], gyrValues[2])
                             .getBytes(StandardCharsets.UTF_8));
                 }
                 else {
