@@ -38,11 +38,11 @@ public class IMUSensorManager implements SensorEventListener{
     }
 
     public void registerIMUSensors() {
-        sensorManager.registerListener(this, Accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, MagneticField, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this,Gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, StepDetector, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, RotationVector, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, Accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, MagneticField, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, Gyroscope, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, StepDetector, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, RotationVector, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     public void unregisterIMUSensors() {
