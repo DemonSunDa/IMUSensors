@@ -32,9 +32,9 @@
 
     <LinearLayout
         android:layout_width="340dp"
-        android:layout_height="500dp"
+        android:layout_height="430dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:layout_marginEnd="16dp"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
@@ -76,7 +76,7 @@
             android:text="@string/tv_mag_title"
             android:textColor="@color/purple_700"
             android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_mag_value0"
@@ -143,5 +143,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/tv_stp_value0" />
+
+        <TextView
+            android:id="@+id/tv_rot_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_rot_title"
+            android:textColor="@color/purple_700"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_rot_value0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_rot_value0" />
+
+        <TextView
+            android:id="@+id/tv_rot_value1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_rot_value1" />
+
+        <TextView
+            android:id="@+id/tv_rot_value2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_rot_value2" />
+
+        <TextView
+            android:id="@+id/tv_rot_value3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tv_rot_value3" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -43,12 +43,18 @@ public class MainActivity extends AppCompatActivity
 
     private TextView tvStpCtr;
 
+    private TextView tvRotX;
+    private TextView tvRotY;
+    private TextView tvRotZ;
+    private TextView tvRotS;
+
     private IMUSensorManager imuSensorManager;
 
     private final String TAG = "IMUSensorLog";
     private boolean idcWrite; // indicator true to start, false to stop
-    File dataFile;
-    FileOutputStream fileOutputStream;
+    private File dataFile;
+    private FileOutputStream fileOutputStream;
+    private String currentDataPath;
 
 
     @Override
@@ -73,6 +79,11 @@ public class MainActivity extends AppCompatActivity
         tvGyrH = findViewById(R.id.tv_gyr_value3);
 
         tvStpCtr = findViewById(R.id.tv_stp_value0);
+
+        tvRotX = findViewById(R.id.tv_rot_value0);
+        tvRotY = findViewById(R.id.tv_rot_value1);
+        tvRotZ = findViewById(R.id.tv_rot_value2);
+        tvRotS = findViewById(R.id.tv_rot_value3);
 
         askStoragePermission();
 
@@ -214,7 +225,7 @@ public class MainActivity extends AppCompatActivity
             fileOutputStream = new FileOutputStream(dataFile, false);
             Log.d(TAG, "Writing to " + currentDataPath);
             if (fileOutputStream != null) {
-                fileOutputStream.write("Timestamp,Sensor_Type,Value_1,Value_2,Value_3,Value_4\n"
+                fileOutputStream.write("Timestamp,Sensor_Type,Value_0,Value_1,Value_2,Value_3\n"
                         .getBytes(StandardCharsets.UTF_8)); // title row
             }
             else {
@@ -247,8 +258,6 @@ public class MainActivity extends AppCompatActivity
         fileOutputStream = null;
     }
 
-
-    private String currentDataPath;
 
     private File createDataFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -316,21 +325,46 @@ public class MainActivity extends AppCompatActivity
     public void onStpValuesUpdate(int stpCtr, long timestamp) {
         tvStpCtr.setText("step count: " + stpCtr);
 
-//        if (idcWrite) {
-//            try {
-//                if (fileOutputStream != null) {
-//                    fileOutputStream.write(String.format(Locale.getDefault(),
-//                            "%d,STP,%d\n",
-//                            timestamp, stpCtr)
-//                            .getBytes(StandardCharsets.UTF_8));
-//                }
-//                else {
-//                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//            catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,STP,%d\n",
+                            timestamp, stpCtr)
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onRotValuesUpdate(float[] rotValues, long timestamp) {
+        tvRotX.setText("rot_X: " + rotValues[0]);
+        tvRotY.setText("rot_Y: " + rotValues[1]);
+        tvRotZ.setText("rot_Z: " + rotValues[2]);
+        tvRotS.setText("rot_S: " + rotValues[3]);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,ROT,%f,%f,%f,%f\n",
+                            timestamp, rotValues[0], rotValues[1], rotValues[2], rotValues[3])
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

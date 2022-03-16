@@ -23,4 +23,9 @@
     <string name="tv_stp_title">Step Detector</string>
     <string name="tv_stp_value0">step count: 0</string>
 
+    <string name="tv_rot_title">Rotation Vector</string>
+    <string name="tv_rot_value0">rot_X: 0</string>
+    <string name="tv_rot_value1">rot_Y: 0</string>
+    <string name="tv_rot_value2">rot_Z: 0</string>
+    <string name="tv_rot_value3">rot_S: 0</string>
 </resources>
