@@ -112,7 +112,6 @@ public class MainActivity extends AppCompatActivity
         imuWifiManager.setOnWifiReceiver(this);
 
         scheduledExecutor = Executors.newScheduledThreadPool(1);
-        imuWifiManager.scanIMUWifi(this);
         scanWifiPer30Sec();
 
         idcWrite = false;
@@ -331,8 +330,8 @@ public class MainActivity extends AppCompatActivity
         // Log.e("TESTSCH", "This is a scheduler test!");
         // imuWifiManager.scanIMUWifi(this);
         ScheduledFuture<?> scannerHandle = scheduledExecutor.scheduleAtFixedRate(
-                scanner, 10, 30, TimeUnit.SECONDS);
-        // Initial delay = 10 s. Period = 10 s.
+                scanner, 0, 30, TimeUnit.SECONDS);
+        // Initial delay = 0 s. Period = 30 s.
         Runnable canceller = () -> scannerHandle.cancel(false);
         scheduledExecutor.schedule(canceller, 2, TimeUnit.HOURS);
     }
@@ -417,11 +416,31 @@ public class MainActivity extends AppCompatActivity
     public void onWifiScanResult(List<ScanResult> wifiScanList) {
         String[] wifis = new String[wifiScanList.size()];
         Log.e("WiFi", String.valueOf(wifiScanList.size()));
-        for (int i = 0; i < wifiScanList.size(); i++) {
-            wifis[i] = wifiScanList.get(i).SSID + "," + wifiScanList.get(i).BSSID + "," +
-                    String.valueOf(wifiScanList.get(i).level);
-            Log.d("WiFi", String.valueOf(wifis[i]));
+        for (int ctr_l = 0; ctr_l < wifiScanList.size(); ctr_l++) { // generate output strings and store in wifis
+            wifis[ctr_l] = wifiScanList.get(ctr_l).SSID + "," + wifiScanList.get(ctr_l).BSSID + "," +
+                    String.valueOf(wifiScanList.get(ctr_l).level);
+            Log.d("WiFi", String.valueOf(wifis[ctr_l]));
         }
+
         lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    for (int ctr_w = 0; ctr_w < wifiScanList.size(); ctr_w ++) {
+                        fileOutputStream.write(String.format(Locale.getDefault(),
+                                "%d,WIFI,%s\n",
+                                wifiScanList.get(ctr_w).timestamp, wifis[ctr_w])
+                                .getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
