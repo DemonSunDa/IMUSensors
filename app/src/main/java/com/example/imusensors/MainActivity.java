@@ -10,20 +10,24 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.net.wifi.ScanResult;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
-        implements IMUSensorManager.OnIMUSensorListener {
+        implements IMUSensorManager.OnIMUSensorListener, IMUWifiManager.OnWifiReceiver {
 
     private Button btIMUStart;
     private Button btIMUStop;
@@ -48,7 +52,10 @@ public class MainActivity extends AppCompatActivity
     private TextView tvRotZ;
     private TextView tvRotS;
 
+    private ListView lv;
+
     private IMUSensorManager imuSensorManager;
+    private IMUWifiManager imuWifiManager;
 
     private final String TAG = "IMUSensorLog";
     private boolean idcWrite; // indicator true to start, false to stop
@@ -85,11 +92,17 @@ public class MainActivity extends AppCompatActivity
         tvRotZ = findViewById(R.id.tv_rot_value2);
         tvRotS = findViewById(R.id.tv_rot_value3);
 
-        askStoragePermission();
+        lv = findViewById(R.id.lv_wifi);
+
+        askWifiPermissions();
 
         // Instantiate SensorManager
         imuSensorManager = new IMUSensorManager(this);
         imuSensorManager.setOnIMUSensorListener(this);
+
+        imuWifiManager = new IMUWifiManager(this);
+        imuWifiManager.setOnWifiReceiver(this);
+        imuWifiManager.scanIMUWifi(this);
 
         idcWrite = false;
         dataFile = null;
@@ -111,6 +124,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         imuSensorManager.registerIMUSensors();
+        imuWifiManager.registerIMUWifi(this);
     }
 
     @Override
@@ -127,26 +141,35 @@ public class MainActivity extends AppCompatActivity
         }
 
         imuSensorManager.unregisterIMUSensors();
+        imuWifiManager.unregisterIMUWifi(this);
     }
 
 
-    private static final int REQUEST_ID_READ_WRITE_PERMISSION = 99;
+    private static final int REQUEST_ID_WIFI_PERMISSION = 99;
 
-    private void askStoragePermission() {
+    private void askWifiPermissions() {
         if (Build.VERSION.SDK_INT >= 23) {
             // Check if we have read/write permission
-            int readStoragePermission = ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE);
-            int writeStoragePermission = ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int wifiAccessPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_WIFI_STATE);
+            int wifiChangePermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CHANGE_WIFI_STATE);
+            int coarseLocationPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION);
+            int fineLocationPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION);
 
-            if (readStoragePermission != PackageManager.PERMISSION_GRANTED ||
-                    writeStoragePermission != PackageManager.PERMISSION_GRANTED) {
+            if (wifiAccessPermission != PackageManager.PERMISSION_GRANTED ||
+                    wifiChangePermission != PackageManager.PERMISSION_GRANTED ||
+                    coarseLocationPermission != PackageManager.PERMISSION_GRANTED ||
+                    fineLocationPermission != PackageManager.PERMISSION_GRANTED) {
                 // If don't have permission so prompt the user
                 this.requestPermissions(
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        REQUEST_ID_READ_WRITE_PERMISSION
+                        new String[]{Manifest.permission.ACCESS_WIFI_STATE,
+                                Manifest.permission.CHANGE_WIFI_STATE,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                                Manifest.permission.ACCESS_FINE_LOCATION},
+                        REQUEST_ID_WIFI_PERMISSION
                 );
                 return;
             }
@@ -155,7 +178,7 @@ public class MainActivity extends AppCompatActivity
 
     private static final int REQUEST_ID_ACTIVITY_RECOGNITION_PERMISSION = 98;
 
-    private void askActivityPermission() {
+    private void askActivityPermissions() {
         if (Build.VERSION.SDK_INT >= 23) {
             // Check if we have activity recognition permission
             //! API 29+ required
@@ -179,19 +202,19 @@ public class MainActivity extends AppCompatActivity
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
-            case REQUEST_ID_READ_WRITE_PERMISSION: {
+            case REQUEST_ID_WIFI_PERMISSION: {
                 // If request is cancelled, the result array is empty
                 // Permissions granted: read/write
                 if (grantResults.length >= 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show();
-                    askActivityPermission();
+                    askActivityPermissions();
                 }
                 //cancel or denied
                 else {
                     Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-                    askStoragePermission();
+                    askWifiPermissions();
                 }
                 break;
             }
@@ -206,7 +229,7 @@ public class MainActivity extends AppCompatActivity
                 //cancel or denied
                 else {
                     Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-                    askActivityPermission();
+                    askActivityPermissions();
                 }
                 break;
             }
@@ -366,5 +389,17 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void onWifiScanResult(List<ScanResult> wifiScanList) {
+        String[] wifis = new String[wifiScanList.size()];
+        Log.e("WiFi", String.valueOf(wifiScanList.size()));
+        for (int i = 0; i < wifiScanList.size(); i++) {
+            wifis[i] = wifiScanList.get(i).SSID + "," + wifiScanList.get(i).BSSID + "," +
+                    String.valueOf(wifiScanList.get(i).level);
+            Log.e("WiFi", String.valueOf(wifis[i]));
+        }
+        lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
     }
 }
