@@ -40,7 +40,6 @@ public class IMUWifiManager {
 
     public void scanIMUWifi(Context context) {
         wifiManager.startScan();
-        Toast.makeText(context, "Scanning WiFi...", Toast.LENGTH_LONG).show();
     }
 
     BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {

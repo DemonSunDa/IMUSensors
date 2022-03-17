@@ -12,8 +12,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
 import android.os.Build;
@@ -56,6 +62,8 @@ public class MainActivity extends AppCompatActivity
 
     private IMUSensorManager imuSensorManager;
     private IMUWifiManager imuWifiManager;
+
+    private ScheduledExecutorService scheduledExecutor;
 
     private final String TAG = "IMUSensorLog";
     private boolean idcWrite; // indicator true to start, false to stop
@@ -102,7 +110,10 @@ public class MainActivity extends AppCompatActivity
 
         imuWifiManager = new IMUWifiManager(this);
         imuWifiManager.setOnWifiReceiver(this);
+
+        scheduledExecutor = Executors.newScheduledThreadPool(1);
         imuWifiManager.scanIMUWifi(this);
+        scanWifiPer30Sec();
 
         idcWrite = false;
         dataFile = null;
@@ -315,6 +326,17 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private void scanWifiPer30Sec() {
+        Runnable scanner = () -> imuWifiManager.scanIMUWifi(this);
+        // Log.e("TESTSCH", "This is a scheduler test!");
+        // imuWifiManager.scanIMUWifi(this);
+        ScheduledFuture<?> scannerHandle = scheduledExecutor.scheduleAtFixedRate(
+                scanner, 10, 30, TimeUnit.SECONDS);
+        // Initial delay = 10 s. Period = 10 s.
+        Runnable canceller = () -> scannerHandle.cancel(false);
+        scheduledExecutor.schedule(canceller, 2, TimeUnit.HOURS);
+    }
+
 
     @Override
     public void onAccValuesUpdate(float[] accFltValues, float[] accValues, long timestamp) {
@@ -398,7 +420,7 @@ public class MainActivity extends AppCompatActivity
         for (int i = 0; i < wifiScanList.size(); i++) {
             wifis[i] = wifiScanList.get(i).SSID + "," + wifiScanList.get(i).BSSID + "," +
                     String.valueOf(wifiScanList.get(i).level);
-            Log.e("WiFi", String.valueOf(wifis[i]));
+            Log.d("WiFi", String.valueOf(wifis[i]));
         }
         lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
     }
