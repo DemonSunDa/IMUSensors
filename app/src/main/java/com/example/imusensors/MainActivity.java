@@ -1,5 +1,10 @@
 package com.example.imusensors;
 
+////////////////////////////////////////
+// Author: Dawei Sun s2225079
+// PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
+////////////////////////////////////////
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -12,15 +17,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.os.Build;
 import android.os.Bundle;
@@ -394,12 +398,18 @@ public class MainActivity extends AppCompatActivity
         tvRotZ.setText("rot_Z: " + rotValues[2]);
         tvRotS.setText("rot_S: " + rotValues[3]);
 
+        float[] rotMat = new float[9];
+        float[] oriValues = new float[3];
+        SensorManager.getRotationMatrixFromVector(rotMat, rotValues);
+        SensorManager.getOrientation(rotMat, oriValues);
+
         if (idcWrite) {
             try {
                 if (fileOutputStream != null) {
                     fileOutputStream.write(String.format(Locale.getDefault(),
-                            "%d,ROT,%f,%f,%f,%f\n",
-                            timestamp, rotValues[0], rotValues[1], rotValues[2], rotValues[3])
+                            "%d,ROT,%f,%f,%f,%f\n%d,ORI,%f,%f,%f\n",
+                            timestamp, rotValues[0], rotValues[1], rotValues[2], rotValues[3],
+                            timestamp, oriValues[0], oriValues[1], oriValues[2])
                             .getBytes(StandardCharsets.UTF_8));
                 }
                 else {
