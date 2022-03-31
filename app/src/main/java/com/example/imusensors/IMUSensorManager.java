@@ -15,6 +15,7 @@ public class IMUSensorManager implements SensorEventListener{
     private final Sensor MagneticField;
     private final Sensor Gyroscope;
     private final Sensor StepDetector;
+    private final Sensor RotationVector;
 
     private int stp_ctr;
 
@@ -26,6 +27,7 @@ public class IMUSensorManager implements SensorEventListener{
         MagneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         Gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         StepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
+        RotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
         stp_ctr = 0;
     }
@@ -36,10 +38,11 @@ public class IMUSensorManager implements SensorEventListener{
     }
 
     public void registerIMUSensors() {
-        sensorManager.registerListener(this, Accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, MagneticField, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this,Gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, StepDetector, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, Accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, MagneticField, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, Gyroscope, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, StepDetector, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, RotationVector, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     public void unregisterIMUSensors() {
@@ -86,6 +89,10 @@ public class IMUSensorManager implements SensorEventListener{
                 stp_ctr = stp_ctr + 1;
                 onIMUSensorListener.onStpValuesUpdate(stp_ctr, sensorEvent.timestamp);
                 break;
+
+            case Sensor.TYPE_ROTATION_VECTOR:
+                onIMUSensorListener.onRotValuesUpdate(
+                        sensorEvent.values, sensorEvent.timestamp);
         }
     }
 
@@ -101,6 +108,6 @@ public class IMUSensorManager implements SensorEventListener{
         void onMagValuesUpdate(float[] magValues, long timestamp);
         void onGyrValuesUpdate(double gyrHValue, float[] gyrValues, long timestamp);
         void onStpValuesUpdate(int stpCtr, long timestamp);
+        void onRotValuesUpdate(float[] rotValues, long timestamp);
     }
-
 }

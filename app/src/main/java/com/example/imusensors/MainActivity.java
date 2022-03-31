@@ -1,5 +1,10 @@
 package com.example.imusensors;
 
+////////////////////////////////////////
+// Author: Dawei Sun s2225079
+// PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
+////////////////////////////////////////
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -10,20 +15,29 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.hardware.SensorManager;
+import android.net.wifi.ScanResult;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
-        implements IMUSensorManager.OnIMUSensorListener {
+        implements IMUSensorManager.OnIMUSensorListener, IMUWifiManager.OnWifiReceiver {
 
     private Button btIMUStart;
     private Button btIMUStop;
@@ -43,12 +57,23 @@ public class MainActivity extends AppCompatActivity
 
     private TextView tvStpCtr;
 
+    private TextView tvRotX;
+    private TextView tvRotY;
+    private TextView tvRotZ;
+    private TextView tvRotS;
+
+    private ListView lv;
+
     private IMUSensorManager imuSensorManager;
+    private IMUWifiManager imuWifiManager;
+
+    private ScheduledExecutorService scheduledExecutor;
 
     private final String TAG = "IMUSensorLog";
     private boolean idcWrite; // indicator true to start, false to stop
-    File dataFile;
-    FileOutputStream fileOutputStream;
+    private File dataFile;
+    private FileOutputStream fileOutputStream;
+    private String currentDataPath;
 
 
     @Override
@@ -74,11 +99,24 @@ public class MainActivity extends AppCompatActivity
 
         tvStpCtr = findViewById(R.id.tv_stp_value0);
 
-        askStoragePermission();
+        tvRotX = findViewById(R.id.tv_rot_value0);
+        tvRotY = findViewById(R.id.tv_rot_value1);
+        tvRotZ = findViewById(R.id.tv_rot_value2);
+        tvRotS = findViewById(R.id.tv_rot_value3);
+
+        lv = findViewById(R.id.lv_wifi);
+
+        askWifiPermissions();
 
         // Instantiate SensorManager
         imuSensorManager = new IMUSensorManager(this);
         imuSensorManager.setOnIMUSensorListener(this);
+
+        imuWifiManager = new IMUWifiManager(this);
+        imuWifiManager.setOnWifiReceiver(this);
+
+        scheduledExecutor = Executors.newScheduledThreadPool(1);
+        scanWifiPer30Sec();
 
         idcWrite = false;
         dataFile = null;
@@ -100,6 +138,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         imuSensorManager.registerIMUSensors();
+        imuWifiManager.registerIMUWifi(this);
     }
 
     @Override
@@ -116,26 +155,35 @@ public class MainActivity extends AppCompatActivity
         }
 
         imuSensorManager.unregisterIMUSensors();
+        imuWifiManager.unregisterIMUWifi(this);
     }
 
 
-    private static final int REQUEST_ID_READ_WRITE_PERMISSION = 99;
+    private static final int REQUEST_ID_WIFI_PERMISSION = 99;
 
-    private void askStoragePermission() {
+    private void askWifiPermissions() {
         if (Build.VERSION.SDK_INT >= 23) {
             // Check if we have read/write permission
-            int readStoragePermission = ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE);
-            int writeStoragePermission = ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int wifiAccessPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_WIFI_STATE);
+            int wifiChangePermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CHANGE_WIFI_STATE);
+            int coarseLocationPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION);
+            int fineLocationPermission = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION);
 
-            if (readStoragePermission != PackageManager.PERMISSION_GRANTED ||
-                    writeStoragePermission != PackageManager.PERMISSION_GRANTED) {
+            if (wifiAccessPermission != PackageManager.PERMISSION_GRANTED ||
+                    wifiChangePermission != PackageManager.PERMISSION_GRANTED ||
+                    coarseLocationPermission != PackageManager.PERMISSION_GRANTED ||
+                    fineLocationPermission != PackageManager.PERMISSION_GRANTED) {
                 // If don't have permission so prompt the user
                 this.requestPermissions(
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        REQUEST_ID_READ_WRITE_PERMISSION
+                        new String[]{Manifest.permission.ACCESS_WIFI_STATE,
+                                Manifest.permission.CHANGE_WIFI_STATE,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                                Manifest.permission.ACCESS_FINE_LOCATION},
+                        REQUEST_ID_WIFI_PERMISSION
                 );
                 return;
             }
@@ -144,7 +192,7 @@ public class MainActivity extends AppCompatActivity
 
     private static final int REQUEST_ID_ACTIVITY_RECOGNITION_PERMISSION = 98;
 
-    private void askActivityPermission() {
+    private void askActivityPermissions() {
         if (Build.VERSION.SDK_INT >= 23) {
             // Check if we have activity recognition permission
             //! API 29+ required
@@ -168,19 +216,19 @@ public class MainActivity extends AppCompatActivity
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
-            case REQUEST_ID_READ_WRITE_PERMISSION: {
+            case REQUEST_ID_WIFI_PERMISSION: {
                 // If request is cancelled, the result array is empty
                 // Permissions granted: read/write
                 if (grantResults.length >= 1
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show();
-                    askActivityPermission();
+                    askActivityPermissions();
                 }
                 //cancel or denied
                 else {
                     Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-                    askStoragePermission();
+                    askWifiPermissions();
                 }
                 break;
             }
@@ -195,7 +243,7 @@ public class MainActivity extends AppCompatActivity
                 //cancel or denied
                 else {
                     Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
-                    askActivityPermission();
+                    askActivityPermissions();
                 }
                 break;
             }
@@ -214,7 +262,7 @@ public class MainActivity extends AppCompatActivity
             fileOutputStream = new FileOutputStream(dataFile, false);
             Log.d(TAG, "Writing to " + currentDataPath);
             if (fileOutputStream != null) {
-                fileOutputStream.write("Timestamp,Sensor_Type,Value_1,Value_2,Value_3,Value_4\n"
+                fileOutputStream.write("Timestamp,Sensor_Type,Value_0,Value_1,Value_2,Value_3\n"
                         .getBytes(StandardCharsets.UTF_8)); // title row
             }
             else {
@@ -248,8 +296,6 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    private String currentDataPath;
-
     private File createDataFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String dataFileName = "IMUData_" + timeStamp; // file name
@@ -281,6 +327,17 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
+    }
+
+    private void scanWifiPer30Sec() {
+        Runnable scanner = () -> imuWifiManager.scanIMUWifi(this);
+        // Log.e("TESTSCH", "This is a scheduler test!");
+        // imuWifiManager.scanIMUWifi(this);
+        ScheduledFuture<?> scannerHandle = scheduledExecutor.scheduleAtFixedRate(
+                scanner, 0, 30, TimeUnit.SECONDS);
+        // Initial delay = 0 s. Period = 30 s.
+        Runnable canceller = () -> scannerHandle.cancel(false);
+        scheduledExecutor.schedule(canceller, 2, TimeUnit.HOURS);
     }
 
 
@@ -316,21 +373,84 @@ public class MainActivity extends AppCompatActivity
     public void onStpValuesUpdate(int stpCtr, long timestamp) {
         tvStpCtr.setText("step count: " + stpCtr);
 
-//        if (idcWrite) {
-//            try {
-//                if (fileOutputStream != null) {
-//                    fileOutputStream.write(String.format(Locale.getDefault(),
-//                            "%d,STP,%d\n",
-//                            timestamp, stpCtr)
-//                            .getBytes(StandardCharsets.UTF_8));
-//                }
-//                else {
-//                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//            catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,STP,%d\n",
+                            timestamp, stpCtr)
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onRotValuesUpdate(float[] rotValues, long timestamp) {
+        tvRotX.setText("rot_X: " + rotValues[0]);
+        tvRotY.setText("rot_Y: " + rotValues[1]);
+        tvRotZ.setText("rot_Z: " + rotValues[2]);
+        tvRotS.setText("rot_S: " + rotValues[3]);
+
+        float[] rotMat = new float[9];
+        float[] oriValues = new float[3];
+        SensorManager.getRotationMatrixFromVector(rotMat, rotValues);
+        SensorManager.getOrientation(rotMat, oriValues);
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(String.format(Locale.getDefault(),
+                            "%d,ROT,%f,%f,%f,%f\n%d,ORI,%f,%f,%f\n",
+                            timestamp, rotValues[0], rotValues[1], rotValues[2], rotValues[3],
+                            timestamp, oriValues[0], oriValues[1], oriValues[2])
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onWifiScanResult(List<ScanResult> wifiScanList) {
+        String[] wifis = new String[wifiScanList.size()];
+        Log.e("WiFi", String.valueOf(wifiScanList.size()));
+        for (int ctr_l = 0; ctr_l < wifiScanList.size(); ctr_l++) { // generate output strings and store in wifis
+            wifis[ctr_l] = wifiScanList.get(ctr_l).SSID + "," + wifiScanList.get(ctr_l).BSSID + "," +
+                    String.valueOf(wifiScanList.get(ctr_l).level);
+            Log.d("WiFi", String.valueOf(wifis[ctr_l]));
+        }
+
+        lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
+
+        if (idcWrite) {
+            try {
+                if (fileOutputStream != null) {
+                    for (int ctr_w = 0; ctr_w < wifiScanList.size(); ctr_w ++) {
+                        fileOutputStream.write(String.format(Locale.getDefault(),
+                                "%d,WIFI,%s\n",
+                                wifiScanList.get(ctr_w).timestamp, wifis[ctr_w])
+                                .getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+                else {
+                    Toast.makeText(this, "Write file error.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
