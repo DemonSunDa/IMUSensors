@@ -5,15 +5,20 @@ package com.example.imusensors;
 // PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
 ////////////////////////////////////////
 
+import static com.example.imusensors.IPS.dbParse;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.Person;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.os.Build;
@@ -62,6 +68,8 @@ public class MainActivity extends AppCompatActivity
     private TextView tvRotZ;
     private TextView tvRotS;
 
+    private TextView tvTEST;
+
     private ListView lv;
 
     private IMUSensorManager imuSensorManager;
@@ -71,6 +79,7 @@ public class MainActivity extends AppCompatActivity
 
     private final String TAG = "IMUSensorLog";
     private boolean idcWrite; // indicator true to start, false to stop
+    private File mAppStorageDir;
     private File dataFile;
     private FileOutputStream fileOutputStream;
     private String currentDataPath;
@@ -104,9 +113,28 @@ public class MainActivity extends AppCompatActivity
         tvRotZ = findViewById(R.id.tv_rot_value2);
         tvRotS = findViewById(R.id.tv_rot_value3);
 
+        tvTEST = findViewById(R.id.textView);
+
         lv = findViewById(R.id.lv_wifi);
 
         askWifiPermissions();
+
+        mAppStorageDir = getFilesDir(); // internal storage directory
+        String DBWifiFileName = "DB_WIFI.csv";
+        ArrayList<IPS.WIFI> DB_WIFI_RAW = null;
+
+        try {
+            AssetManager assetManager = getAssets();
+            InputStream inputStream = assetManager.open(DBWifiFileName);
+
+            DB_WIFI_RAW = dbParse(inputStream);
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        if (DB_WIFI_RAW != null) {
+            tvTEST.setText(String.format("%s, %s", DB_WIFI_RAW.get(0)._id, DB_WIFI_RAW.get(1).WIFI_BSSID));
+        }
 
         // Instantiate SensorManager
         imuSensorManager = new IMUSensorManager(this);
@@ -136,7 +164,6 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
-
         imuSensorManager.registerIMUSensors();
         imuWifiManager.registerIMUWifi(this);
     }
@@ -299,7 +326,6 @@ public class MainActivity extends AppCompatActivity
     private File createDataFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String dataFileName = "IMUData_" + timeStamp; // file name
-        File mAppStorageDir = getFilesDir(); // internal storage directory
         File imuData = File.createTempFile(
                 dataFileName,
                 ".csv",
@@ -433,6 +459,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
+
+        // IPS.wifiPositioning(wifiScanList, DB_WIFI_REORG);
 
         if (idcWrite) {
             try {
