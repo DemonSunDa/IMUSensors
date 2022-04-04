@@ -1,14 +1,16 @@
 package com.example.imusensors;
 
-import android.Manifest;
+////////////////////////////////////////
+// Author: Dawei Sun s2225079
+// PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
+////////////////////////////////////////
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.util.Log;
-import android.widget.Toast;
 
 import java.util.List;
 
@@ -19,7 +21,7 @@ public class IMUWifiManager {
     // Constructor of the class
     public IMUWifiManager(Context context) {
         wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        if(wifiManager.getWifiState() == wifiManager.WIFI_STATE_DISABLED) {
+        if(wifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             wifiManager.setWifiEnabled(true);
             context.registerReceiver(wifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
         }

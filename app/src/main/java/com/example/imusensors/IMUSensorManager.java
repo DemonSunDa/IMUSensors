@@ -1,6 +1,10 @@
 package com.example.imusensors;
 
-import android.Manifest;
+////////////////////////////////////////
+// Author: Dawei Sun s2225079
+// PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
+////////////////////////////////////////
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
