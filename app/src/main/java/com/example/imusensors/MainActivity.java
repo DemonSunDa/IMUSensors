@@ -5,12 +5,12 @@ package com.example.imusensors;
 // PGEE111152021-2SS1SEM2: Embedded Mobile and Wireless Systems (EWireless) (MSc) (2021-2022)[SEM2]
 ////////////////////////////////////////
 
-import static com.example.imusensors.IPS.dbParse;
+import static com.example.imusensors.IPS.dbEMFParse;
+import static com.example.imusensors.IPS.dbWIFIParse;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.Person;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -84,6 +84,10 @@ public class MainActivity extends AppCompatActivity
     private FileOutputStream fileOutputStream;
     private String currentDataPath;
 
+    private ArrayList<IPS.WIFI> DB_WIFI_RAW;
+    private ArrayList<IPS.EMF> DB_EMF_RAW;
+    private ArrayList<Integer> DB_WIFI_CTR;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,13 +125,13 @@ public class MainActivity extends AppCompatActivity
 
         mAppStorageDir = getFilesDir(); // internal storage directory
         String DBWifiFileName = "DB_WIFI.csv";
-        ArrayList<IPS.WIFI> DB_WIFI_RAW = null;
+        DB_WIFI_RAW = null;
 
         try {
             AssetManager assetManager = getAssets();
             InputStream inputStream = assetManager.open(DBWifiFileName);
 
-            DB_WIFI_RAW = dbParse(inputStream);
+            DB_WIFI_RAW = dbWIFIParse(inputStream);
         }
         catch (IOException exception) {
             exception.printStackTrace();
@@ -135,6 +139,21 @@ public class MainActivity extends AppCompatActivity
         if (DB_WIFI_RAW != null) {
             tvTEST.setText(String.format("%s, %s", DB_WIFI_RAW.get(0)._id, DB_WIFI_RAW.get(1).WIFI_BSSID));
         }
+
+        String DBEMFFileName = "DB_EMF.csv";
+        DB_EMF_RAW = null;
+
+        try {
+            AssetManager assetManager = getAssets();
+            InputStream inputStream = assetManager.open(DBEMFFileName);
+
+            DB_EMF_RAW = dbEMFParse(inputStream);
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
+
+        DB_WIFI_CTR = IPS.dbWifiReorg(DB_WIFI_RAW);
 
         // Instantiate SensorManager
         imuSensorManager = new IMUSensorManager(this);
@@ -460,7 +479,8 @@ public class MainActivity extends AppCompatActivity
 
         lv.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, wifis));
 
-        // IPS.wifiPositioning(wifiScanList, DB_WIFI_REORG);
+        double[] xy_loc = IPS.wifiPositioning(wifiScanList, DB_WIFI_RAW, DB_WIFI_CTR);
+        tvTEST.setText(String.format("Local X, Y: %f, %f", xy_loc[0], xy_loc[1]));
 
         if (idcWrite) {
             try {
